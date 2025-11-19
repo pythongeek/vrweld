@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VRWeld - Professional virtual welding training simulator. Train welders faster, safer, and smarter with multiplayer VR technology.">
+    <title>VRWeld - Virtual Welding Training Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* === VRWELD ADVANCED INDUSTRIAL THEME === */
+        :root {
+            --neon-orange: #ff8800;
+            --neon-blue: #00f3ff;
+            --deep-space: #050b14;
+            --armor-plate: #121a26;
+            --glass-panel: rgba(18, 26, 38, 0.85);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aab5;
+            --font-heading: 'Orbitron', sans-serif;
+            --font-body: 'Roboto', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--deep-space);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* === PARTICLE BACKGROUND === */
+        .particles-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-orange);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0); }
+            100% { transform: translateY(-100vh) translateX(100px); }
+        }
+
+        /* === NAVIGATION === */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(5, 11, 20, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 136, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .nav-bar.scrolled {
+            background: rgba(18, 26, 38, 0.98);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-orange), #ff4d00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 35px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--neon-orange);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-orange);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            background: var(--neon-orange);
+            color: black;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(255, 136, 0, 0.4);
+        }
+
+        .nav-cta:hover {
+            background: white;
+            color: black;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+        }
+
+        /* === HERO SECTION === */
+        .vrw-master-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        .vrw-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .vrw-hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-top: 80px;
+        }
+
+        .vrw-hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255, 136, 0, 0.15) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.15; }
+            50% { transform: scale(1.1); opacity: 0.25; }
+        }
+
+        .vrw-hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 60px;
+            align-items: center;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+            from { transform: translateY(30px); }
+        }
+
+        .vrw-hero-badge {
+            background: rgba(255, 136, 0, 0.1);
+            border: 1px solid var(--neon-orange);
+            color: var(--neon-orange);
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 25px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(255, 136, 0, 0.3); }
+            to { box-shadow: 0 0 20px rgba(255, 136, 0, 0.6); }
+        }
+
+        .vrw-hero h1 {
+            font-family: var(--font-heading);
+            font-size: 4.2rem;
+            line-height: 1.1;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .vrw-gradient-text {
+            background: linear-gradient(90deg, var(--neon-orange), #ff4d00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            position: relative;
+        }
+
+        .vrw-hero p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 45px;
+            border-left: 4px solid var(--neon-orange);
+            padding-left: 25px;
+            line-height: 1.8;
+        }
+
+        .vrw-btn-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vrw-btn {
+            padding: 20px 40px;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1.5px;
+            font-size: 0.95rem;
+            border-radius: 3px;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .vrw-btn-glow {
+            background: var(--neon-orange);
+            color: black;
+            box-shadow: 0 0 20px rgba(255, 136, 0, 0.4);
+        }
+
+        .vrw-btn-glow::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .vrw-btn-glow:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .vrw-btn-glow:hover {
+            background: white;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.8);
+            transform: translateY(-3px);
+        }
+
+        .vrw-btn-outline {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        .vrw-btn-outline:hover {
+            border-color: var(--neon-orange);
+            color: var(--neon-orange);
+            background: rgba(255, 136, 0, 0.1);
+            transform: translateY(-3px);
+        }
+
+        /* === HOLOGRAPHIC FRAME === */
+        .vrw-holo-frame {
+            position: relative;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: floatFrame 6s ease-in-out infinite;
+        }
+
+        @keyframes floatFrame {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .vrw-holo-frame:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 80px rgba(255, 136, 0, 0.3);
+            animation: none;
+        }
+
+        .vrw-holo-frame::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: 
+                linear-gradient(90deg, var(--neon-orange) 2px, transparent 2px) top left,
+                linear-gradient(0deg, var(--neon-orange) 2px, transparent 2px) top left,
+                linear-gradient(-90deg, var(--neon-orange) 2px, transparent 2px) bottom right,
+                linear-gradient(0deg, var(--neon-orange) 2px, transparent 2px) bottom right;
+            background-size: 25px 25px;
+            background-repeat: no-repeat;
+            pointer-events: none;
+        }
+
+        .vrw-holo-frame::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 136, 0, 0.3), transparent);
+            animation: scan 3s linear infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .vrw-hud-status {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--neon-orange);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* === STATS BAR === */
+        .vrw-stats-bar {
+            background: var(--armor-plate);
+            border-top: 1px solid rgba(255, 136, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 136, 0, 0.2);
+            padding: 60px 0;
+            position: relative;
+        }
+
+        .vrw-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            text-align: center;
+        }
+
+        .vrw-stat-item {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .vrw-stat-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .vrw-stat-item h3 {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            color: var(--neon-orange);
+            margin-bottom: 10px;
+            font-weight: 900;
+        }
+
+        .vrw-stat-item span {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* === FEATURES SECTION === */
+        .vrw-features-section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .vrw-section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .vrw-section-header h2 {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .vrw-section-header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .vrw-feature-showcase {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            margin-bottom: 120px;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .vrw-feature-showcase.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .vrw-feature-showcase.reverse {
+            direction: rtl;
+        }
+
+        .vrw-feature-showcase.reverse .vrw-feature-text {
+            direction: ltr;
+        }
+
+        .vrw-feature-text h2 {
+            font-family: var(--font-heading);
+            font-size: 2.8rem;
+            margin-bottom: 25px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .vrw-feature-text p {
+            color: var(--text-secondary);
+            margin-bottom: 35px;
+            font-size: 1.15rem;
+            line-height: 1.8;
+        }
+
+        .vrw-check-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .vrw-check-list li {
+            padding: 15px 0 15px 35px;
+            position: relative;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .vrw-check-list li:hover {
+            color: white;
+            padding-left: 40px;
+        }
+
+        .vrw-check-list li::before {
+            content: '►';
+            color: var(--neon-orange);
+            position: absolute;
+            left: 0;
+            font-size: 1.2rem;
+        }
+
+        .vrw-check-list li strong {
+            color: var(--neon-orange);
+        }
+
+        /* === PRICING SECTION === */
+        .vrw-pricing-section {
+            padding: 120px 0;
+            background: linear-gradient(180deg, var(--deep-space) 0%, #0a121f 100%);
+            text-align: center;
+            position: relative;
+        }
+
+        .vrw-pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-top: 70px;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .vrw-price-card {
+            background: var(--armor-plate);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            padding: 60px 40px;
+            position: relative;
+            transition: all 0.4s ease;
+            opacity: 0;
+            transform: translateY(50px);
+        }
+
+        .vrw-price-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .vrw-price-card:hover {
+            transform: translateY(-15px);
+            border-color: var(--neon-orange);
+            box-shadow: 0 20px 60px rgba(255, 136, 0, 0.3);
+        }
+
+        .vrw-price-card.featured {
+            background: linear-gradient(145deg, rgba(255, 136, 0, 0.15), var(--armor-plate));
+            border: 2px solid var(--neon-orange);
+            transform: scale(1.05);
+        }
+
+        .vrw-price-card.featured:hover {
+            transform: scale(1.08) translateY(-15px);
+        }
+
+        .vrw-price-badge {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--neon-orange);
+            color: black;
+            font-weight: bold;
+            font-size: 0.85rem;
+            padding: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .vrw-price-category {
+            margin-top: 25px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--neon-blue);
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .vrw-price-card.featured .vrw-price-category {
+            color: var(--neon-orange);
+        }
+
+        .vrw-price-card h3 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .vrw-price-amount {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 25px 0;
+            font-family: var(--font-heading);
+        }
+
+        .vrw-price-amount span {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .vrw-price-description {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .vrw-price-features {
+            text-align: left;
+            margin: 35px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 25px;
+        }
+
+        .vrw-price-features p {
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* === SOCIAL PROOF SECTION === */
+        .vrw-proof-section {
+            padding: 100px 0;
+            background: var(--armor-plate);
+            border-top: 1px solid rgba(255, 136, 0, 0.2);
+        }
+
+        .vrw-trust-badges {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            max-width: 1000px;
+            margin: 60px auto 0;
+        }
+
+        .vrw-trust-item {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .vrw-trust-item:hover {
+            background: rgba(255, 136, 0, 0.05);
+            border-color: var(--neon-orange);
+            transform: translateY(-5px);
+        }
+
+        .vrw-trust-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .vrw-trust-item h4 {
+            font-family: var(--font-heading);
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--neon-orange);
+        }
+
+        .vrw-trust-item p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* === CTA SECTION === */
+        .vrw-cta-section {
+            padding: 100px 0;
+            background: linear-gradient(135deg, rgba(255, 136, 0, 0.1) 0%, var(--deep-space) 100%);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vrw-cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 136, 0, 0.1) 0%, transparent 50%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .vrw-cta-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .vrw-cta-content h2 {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+
+        .vrw-cta-content p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 45px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* === FOOTER === */
+        .vrw-footer {
+            background: var(--armor-plate);
+            padding: 60px 0 30px;
+            border-top: 1px solid rgba(255, 136, 0, 0.2);
+        }
+
+        .vrw-footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 50px;
+            margin-bottom: 40px;
+        }
+
+        .vrw-footer-brand h3 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--neon-orange);
+        }
+
+        .vrw-footer-brand p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .vrw-footer-links h4 {
+            font-family: var(--font-heading);
+            margin-bottom: 20px;
+            color: white;
+            text-transform: uppercase;
+            font-size: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .vrw-footer-links ul {
+            list-style: none;
+        }
+
+        .vrw-footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .vrw-footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .vrw-footer-links a:hover {
+            color: var(--neon-orange);
+            padding-left: 5px;
+        }
+
+        .vrw-footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* === MOBILE RESPONSIVENESS === */
+        @media (max-width: 1024px) {
+            .vrw-hero h1 { font-size: 3.2rem; }
+            .vrw-feature-text h2 { font-size: 2.3rem; }
+            .vrw-section-header h2 { font-size: 2.8rem; }
+        }
+
+        @media (max-width: 900px) {
+            .vrw-hero-grid,
+            .vrw-feature-showcase,
+            .vrw-footer-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .vrw-feature-showcase.reverse {
+                direction: ltr;
+            }
+            
+            .vrw-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .vrw-stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .vrw-btn-group {
+                flex-direction: column;
+            }
+
+            .vrw-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .vrw-hero h1 {
+                font-size: 2rem;
+            }
+
+            .vrw-section-header h2 {
+                font-size: 2rem;
+            }
+
+            .vrw-stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vrw-pricing-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .vrw-price-card.featured {
+                transform: scale(1);
+            }
+        }
+
+        /* === SCROLL ANIMATIONS === */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div class="particles-bg" id="particles"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-bar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">VRWELD</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#about">About</a>
+                <a href="#contact" class="nav-cta">Get Demo</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="vrw-master-wrapper">
+        <!-- HERO SECTION -->
+        <header class="vrw-hero">
+            <div class="vrw-container">
+                <div class="vrw-hero-grid">
+                    <div class="vrw-hero-content">
+                        <div class="vrw-hero-badge">Hardware-Free • Oculus Ready</div>
+                        <h1>Stop Burning Money On <br><span class="vrw-gradient-text">Scrap Metal.</span></h1>
+                        <p>
+                            Train welders faster, safer, and smarter. The only multiplayer VR welding simulator that puts instructors inside the booth with students—eliminating material waste and safety risks entirely.
+                        </p>
+                        <div class="vrw-btn-group">
+                            <a href="#pricing" class="vrw-btn vrw-btn-glow">Start 30-Day Pilot</a>
+                            <a href="#features" class="vrw-btn vrw-btn-outline">Explore Features</a>
+                        </div>
+                    </div>
+
+                    <div class="vrw-hero-visual">
+                        <div class="vrw-holo-frame">
+                            <div style="width:100%; max-width:100%;">
+                                <div style="height:0; padding-bottom:56.11%; position:relative;">
+                                    <iframe width="100%" height="100%" style="position:absolute; top:0; left:0; width:100%; height:100%;" frameBorder="0" src="https://imgflip.com/embed/acmzt7"></iframe>
+                                </div>
+                            </div>
+                            <div class="vrw-hud-status">
+                                <span>⚡ SYSTEM: ONLINE</span>
+                                <span>🎯 MODE: TRAINING</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- STATS BAR -->
+        <section class="vrw-stats-bar">
+            <div class="vrw-container">
+                <div class="vrw-stats-grid">
+                    <div class="vrw-stat-item">
+                        <h3>$0</h3>
+                        <span>Material Waste</span>
+                    </div>
+                    <div class="vrw-stat-item">
+                        <h3>4</h3>
+                        <span>Welding Processes</span>
+                    </div>
+                    <div class="vrw-stat-item">
+                        <h3>100%</h3>
+                        <span>Risk-Free Safety</span>
+                    </div>
+                    <div class="vrw-stat-item">
+                        <h3>AWS</h3>
+                        <span>Standards Aligned</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURES SECTION -->
+        <section id="features" class="vrw-features-section">
+            <div class="vrw-container">
+                <div class="vrw-section-header fade-in">
+                    <h2>Why VRWeld <span class="vrw-gradient-text">Dominates</span></h2>
+                    <p>Legacy simulators are isolated, expensive, and wasteful. VRWeld transforms welding education with multiplayer collaboration, zero material costs, and instant feedback.</p>
+                </div>
+
+                <!-- Feature 1: Multiplayer Training -->
+                <div class="vrw-feature-showcase fade-in">
+                    <div class="vrw-feature-visual">
+                        <div class="vrw-holo-frame" style="border-color: var(--neon-blue);">
+                            <div style="width:100%; height:0; padding-bottom:75%; position:relative; background: rgba(0,0,0,0.3);">
+                                <img src="https://i.imgflip.com/acmgic.gif" 
+                                     alt="Multiplayer VR Training" 
+                                     style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vrw-feature-text">
+                        <h2 style="color: var(--neon-blue);">Multiplayer <br>Training Labs</h2>
+                        <p>Traditional simulators isolate students. VRWeld uses cloud-based multiplayer technology to create immersive virtual classrooms where instructors and students collaborate in real-time.</p>
+                        <ul class="vrw-check-list">
+                            <li><strong>Ghost Mode:</strong> Observe students' techniques from any angle as they practice</li>
+                            <li><strong>Hand-Over-Hand Correction:</strong> Guide students by physically demonstrating proper torch angles and travel speeds</li>
+                            <li><strong>Classroom Management:</strong> Control audio, manage sessions, and provide instant feedback to multiple students simultaneously</li>
+                            <li><strong>Session Recording:</strong> Review practice sessions for detailed performance analysis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Feature 2: Gamified Learning -->
+                <div class="vrw-feature-showcase reverse fade-in">
+                    <div class="vrw-feature-visual">
+                        <div class="vrw-holo-frame">
+                            <div style="width:100%; height:0; padding-bottom:60%; position:relative; background: rgba(0,0,0,0.3);">
+                                <img src="https://i.imgflip.com/acmgdu.gif" 
+                                     alt="Gamified Welding Training" 
+                                     style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vrw-feature-text">
+                        <h2>Gamified <br>Skill Progression</h2>
+                        <p>We transformed AWS welding standards into an engaging progression system. Students earn achievements, unlock advanced equipment, and compete for mastery—turning tedious practice into addictive skill-building.</p>
+                        <ul class="vrw-check-list">
+                            <li><strong>Real-Time Scoring:</strong> Instant feedback on arc length, travel speed, work angle, and bead quality</li>
+                            <li><strong>Complete Curriculum:</strong> Blueprint reading, shop math, fabrication, and all four major welding processes (MIG, TIG, Stick, Flux-Core)</li>
+                            <li><strong>23 Joint Types:</strong> Master every AWS-certified configuration across flat, horizontal, vertical, and overhead positions</li>
+                            <li><strong>Consumer Hardware:</strong> Runs on standard Oculus Quest headsets—no specialized equipment required</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Feature 3: Data-Driven Insights -->
+                <div class="vrw-feature-showcase fade-in">
+                    <div class="vrw-feature-visual">
+                        <div class="vrw-holo-frame" style="border-color: var(--neon-orange);">
+                            <div style="width:100%; padding: 40px; background: linear-gradient(135deg, rgba(255,136,0,0.1), rgba(0,0,0,0.3)); min-height: 300px; display: flex; align-items: center; justify-content: center;">
+                                <div style="text-align: center; color: var(--neon-orange); font-family: var(--font-heading);">
+                                    <div style="font-size: 4rem; margin-bottom: 20px;">📊</div>
+                                    <div style="font-size: 1.5rem;">ADMIN DASHBOARD</div>
+                                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px;">PERFORMANCE ANALYTICS</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vrw-feature-text">
+                        <h2 style="color: var(--neon-orange);">Instructor <br>Dashboard</h2>
+                        <p>Track every metric that matters. Our admin platform gives instructors unprecedented visibility into student progress, skill development, and engagement patterns.</p>
+                        <ul class="vrw-check-list">
+                            <li><strong>Real-Time Analytics:</strong> Monitor class performance, practice time, and completion rates at a glance</li>
+                            <li><strong>Individual Progress Tracking:</strong> Detailed breakdown of each student's strengths, weaknesses, and improvement trajectory</li>
+                            <li><strong>Automated Grading:</strong> AWS-standard scoring eliminates subjective assessment and ensures consistent evaluation</li>
+                            <li><strong>Attendance & Engagement:</strong> Automatic logging of session times, login frequency, and practice duration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SOCIAL PROOF SECTION -->
+        <section class="vrw-proof-section">
+            <div class="vrw-container">
+                <div class="vrw-section-header fade-in">
+                    <h2>Trusted By <span class="vrw-gradient-text">Industry Leaders</span></h2>
+                    <p>VRWeld partners with vocational institutions, correctional facilities, and corporate training programs to deliver world-class welding education.</p>
+                </div>
+
+                <div class="vrw-trust-badges">
+                    <div class="vrw-trust-item fade-in">
+                        <div class="vrw-trust-icon">🏫</div>
+                        <h4>Education Sector</h4>
+                        <p>Deployed in technical colleges and vocational schools nationwide</p>
+                    </div>
+                    <div class="vrw-trust-item fade-in">
+                        <div class="vrw-trust-icon">🔒</div>
+                        <h4>Prison Rehabilitation</h4>
+                        <p>Providing inmates with employable skills and career pathways</p>
+                    </div>
+                    <div class="vrw-trust-item fade-in">
+                        <div class="vrw-trust-icon">🏭</div>
+                        <h4>Corporate Training</h4>
+                        <p>Upskilling industrial workforces with measurable, repeatable simulations</p>
+                    </div>
+                    <div class="vrw-trust-item fade-in">
+                        <div class="vrw-trust-icon">✅</div>
+                        <h4>AWS Certified</h4>
+                        <p>Curriculum aligned with American Welding Society standards</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICING SECTION -->
+        <section id="pricing" class="vrw-pricing-section">
+            <div class="vrw-container">
+                <div class="vrw-section-header">
+                    <h2>Choose Your <span class="vrw-gradient-text">Training Path</span></h2>
+                    <p>Hardware-neutral pricing designed for institutions and individual learners.</p>
+                </div>
+
+                <div class="vrw-pricing-cards">
+                    <!-- Institutional Plan -->
+                    <div class="vrw-price-card fade-in">
+                        <div class="vrw-price-category">Education & Prisons</div>
+                        <h3>The Classroom</h3>
+                        <div class="vrw-price-amount">$70<span>/month</span></div>
+                        <p class="vrw-price-description">Per Student • Billed Annually</p>
+
+                        <div class="vrw-price-features">
+                            <p><strong>Everything You Need:</strong></p>
+                            <ul class="vrw-check-list" style="padding: 0;">
+                                <li>Admin Dashboard with Real-Time Analytics</li>
+                                <li>Multiplayer Instructor Access</li>
+                                <li>AWS-Aligned Curriculum (All 4 Processes)</li>
+                                <li>Automated Progress Tracking & Grading</li>
+                                <li>Premium Support & Onboarding</li>
+                                <li>Free Software Updates</li>
+                            </ul>
+                        </div>
+                        <a href="#contact" class="vrw-btn vrw-btn-outline" style="width: 100%; display: block; text-align: center;">Request 30-Day Pilot</a>
+                    </div>
+
+                    <!-- Individual Plan (Featured) -->
+                    <div class="vrw-price-card featured fade-in">
+                        <div class="vrw-price-badge">Most Popular</div>
+                        <div class="vrw-price-category">Individual Learner</div>
+                        <h3>Lifetime Access</h3>
+                        <div class="vrw-price-amount">$899<span>/lifetime</span></div>
+                        <p class="vrw-price-description">One-Time Payment • No Subscriptions</p>
+
+                        <div class="vrw-price-features">
+                            <p><strong>Complete Training Package:</strong></p>
+                            <ul class="vrw-check-list" style="padding: 0;">
+                                <li>Unlimited Practice (All 4 Welding Processes)</li>
+                                <li>AI Instructor Feedback System</li>
+                                <li>23 Joint Types Across All Positions</li>
+                                <li>Blueprint Reading & Shop Math Modules</li>
+                                <li>Downloadable Skill Certifications</li>
+                                <li>Free Updates Forever</li>
+                            </ul>
+                        </div>
+                        <a href="#contact" class="vrw-btn vrw-btn-glow" style="width: 100%; display: block; text-align: center;">Get Started Now</a>
+                    </div>
+
+                    <!-- Custom Enterprise Plan -->
+                    <div class="vrw-price-card fade-in">
+                        <div class="vrw-price-category">Enterprise</div>
+                        <h3>Custom Solution</h3>
+                        <div class="vrw-price-amount">Let's Talk</div>
+                        <p class="vrw-price-description">Tailored for Large Organizations</p>
+
+                        <div class="vrw-price-features">
+                            <p><strong>Enterprise Features:</strong></p>
+                            <ul class="vrw-check-list" style="padding: 0;">
+                                <li>Volume Licensing Discounts</li>
+                                <li>Custom Curriculum Development</li>
+                                <li>White-Label Branding Options</li>
+                                <li>Dedicated Account Manager</li>
+                                <li>API Integration Support</li>
+                                <li>Priority Technical Support</li>
+                            </ul>
+                        </div>
+                        <a href="#contact" class="vrw-btn vrw-btn-outline" style="width: 100%; display: block; text-align: center;">Schedule Consultation</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA SECTION -->
+        <section class="vrw-cta-section">
+            <div class="vrw-container">
+                <div class="vrw-cta-content">
+                    <h2>Ready To <span class="vrw-gradient-text">Transform</span> Your Training?</h2>
+                    <p>Join the institutions already saving thousands on materials while improving student outcomes. Start your risk-free pilot today.</p>
+                    <div class="vrw-btn-group" style="justify-content: center;">
+                        <a href="#contact" class="vrw-btn vrw-btn-glow">Book Demo Call</a>
+                        <a href="#pricing" class="vrw-btn vrw-btn-outline">View Pricing</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="vrw-footer">
+            <div class="vrw-container">
+                <div class="vrw-footer-content">
+                    <div class="vrw-footer-brand">
+                        <h3>VRWELD</h3>
+                        <p>Professional welding training simulator promoting creativity, critical thinking, and knowledge in a gamified VR environment. Empowering the next generation of welders through immersive, risk-free education.</p>
+                    </div>
+                    <div class="vrw-footer-links">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#pricing">Pricing</a></li>
+                            <li><a href="#">Demo</a></li>
+                            <li><a href="#">Case Studies</a></li>
+                        </ul>
+                    </div>
+                    <div class="vrw-footer-links">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="#">Careers</a></li>
+                            <li><a href="#">Partners</a></li>
+                            <li><a href="#" id="contact">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div class="vrw-footer-links">
+                        <h4>Resources</h4>
+                        <ul>
+                            <li><a href="#">Documentation</a></li>
+                            <li><a href="#">Support</a></li>
+                            <li><a href="#">Blog</a></li>
+                            <li><a href="#">FAQ</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="vrw-footer-bottom">
+                    <p>&copy; 2025 VRWeld. All rights reserved. | <a href="#" style="color: var(--text-secondary);">Privacy Policy</a> | <a href="#" style="color: var(--text-secondary);">Terms of Service</a></p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Particle System
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Scroll Animations
+        function handleScrollAnimations() {
+            const elements = document.querySelectorAll('.fade-in, .vrw-stat-item, .vrw-price-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
+            });
+
+            elements.forEach(el => observer.observe(el));
+        }
+
+        // Navbar Scroll Effect
+        function handleNavbarScroll() {
+            const navbar = document.getElementById('navbar');
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 100) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+        }
+
+        // Smooth Scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            handleScrollAnimations();
+            handleNavbarScroll();
+        });
+    </script>
+</body>
+</html>
